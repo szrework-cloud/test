@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  prenom    String
+  nom       String
+  createdAt DateTime  @default(now())
+  sessions  Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+model Contact {
+  id             String @id @default(cuid())
+  prenom         String
+  nom            String
+  email          String @unique
+  telephone      String @default("")
+  entreprise     String @default("")
+  statut         String @default("prospect")
+  dateAjout      DateTime @default(now())
+  dernierContact DateTime @default(now())
+  notes          Note[]
+
+  @@index([statut])
+  @@index([dateAjout])
+  @@index([dernierContact])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  contenu   String
+  date      DateTime @default(now())
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId String
+
+  @@index([contactId])
+  @@index([date])
+}

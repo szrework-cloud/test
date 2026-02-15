@@ -1,26 +1,234 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: #22C55E;
+  --color-primary-hover: #16A34A;
+  --color-primary-light: #4ADE80;
+  --color-primary-dim: #166534;
+  --color-accent: #F0AB1F;
+  --color-surface: #0C0C0C;
+  --color-surface-light: #131315;
+  --color-surface-lighter: #1A1A1E;
+  --color-surface-card: #101012;
+  --color-text-bright: #E8ECF0;
+  --color-text-muted: #5C6370;
+  --color-border: #1E1E22;
+  --color-border-glow: rgba(34, 197, 94, 0.12);
+  --color-danger: #EF4444;
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1E1E22 transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1E1E22;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #22C55E30;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #080808;
+  color: var(--color-text-bright);
+}
+
+/* ---- Noise grain texture overlay ---- */
+.grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px;
+}
+
+/* ---- Animated border gradient ---- */
+.card-glow {
+  position: relative;
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.card-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.15),
+    transparent 40%,
+    transparent 60%,
+    rgba(34, 197, 94, 0.08)
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  opacity: 0.6;
+}
+
+.card-glow:hover::before {
+  opacity: 1;
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.3),
+    transparent 40%,
+    transparent 60%,
+    rgba(34, 197, 94, 0.15)
+  );
+}
+
+/* ---- Glow utilities ---- */
+.glow-subtle {
+  box-shadow:
+    0 0 30px rgba(34, 197, 94, 0.06),
+    0 0 60px rgba(34, 197, 94, 0.03);
+}
+
+.glow-medium {
+  box-shadow:
+    0 0 20px rgba(34, 197, 94, 0.12),
+    0 0 60px rgba(34, 197, 94, 0.06),
+    inset 0 1px 0 rgba(34, 197, 94, 0.05);
+}
+
+.glow-strong {
+  box-shadow:
+    0 0 30px rgba(34, 197, 94, 0.2),
+    0 0 80px rgba(34, 197, 94, 0.08),
+    0 0 120px rgba(34, 197, 94, 0.04);
+}
+
+.glow-text {
+  text-shadow:
+    0 0 30px rgba(34, 197, 94, 0.6),
+    0 0 60px rgba(34, 197, 94, 0.3),
+    0 0 90px rgba(34, 197, 94, 0.1);
+}
+
+/* ---- Stagger entrance animations ---- */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(34, 197, 94, 0.1),
+      0 0 60px rgba(34, 197, 94, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(34, 197, 94, 0.2),
+      0 0 80px rgba(34, 197, 94, 0.08);
+  }
+}
+
+@keyframes border-shine {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-in {
+  animation: fadeUp 0.5s ease-out both;
+}
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }
+
+.pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+/* ---- Primary button with animated border ---- */
+.btn-primary {
+  position: relative;
+  background: linear-gradient(135deg, #22C55E, #16A34A);
+  color: white;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 0.8125rem;
+  transition: all 0.3s ease;
+  box-shadow:
+    0 4px 15px rgba(34, 197, 94, 0.25),
+    0 0 0 1px rgba(34, 197, 94, 0.1);
+}
+
+.btn-primary:hover {
+  box-shadow:
+    0 6px 25px rgba(34, 197, 94, 0.35),
+    0 0 0 1px rgba(34, 197, 94, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* ---- Scan line effect for headers ---- */
+.scan-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(34, 197, 94, 0.3) 20%,
+    rgba(34, 197, 94, 0.5) 50%,
+    rgba(34, 197, 94, 0.3) 80%,
+    transparent
+  );
+}
+
+/* ---- Input focus glow ---- */
+.input-glow:focus {
+  border-color: #22C55E;
+  box-shadow:
+    0 0 0 3px rgba(34, 197, 94, 0.08),
+    0 0 20px rgba(34, 197, 94, 0.06);
 }
