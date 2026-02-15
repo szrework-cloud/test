@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
+import { getCurrentUser } from "@/lib/auth"
 import {
   CreateContactSchema,
   UpdateContactSchema,
@@ -13,9 +14,17 @@ type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string }
 
+async function requireUser() {
+  const user = await getCurrentUser()
+  if (!user) throw new Error("Non authentifie")
+  return user
+}
+
 export async function getContacts(): Promise<ActionResult<Awaited<ReturnType<typeof prisma.contact.findMany>>>> {
   try {
+    const user = await requireUser()
     const contacts = await prisma.contact.findMany({
+      where: { userId: user.id },
       orderBy: { dateAjout: "desc" },
     })
     return { success: true, data: contacts }
@@ -26,13 +35,14 @@ export async function getContacts(): Promise<ActionResult<Awaited<ReturnType<typ
 
 export async function getContactById(id: string): Promise<ActionResult<Awaited<ReturnType<typeof prisma.contact.findUnique>>>> {
   try {
+    const user = await requireUser()
     const parsed = ContactIdSchema.safeParse(id)
     if (!parsed.success) {
       return { success: false, error: "ID invalide" }
     }
 
-    const contact = await prisma.contact.findUnique({
-      where: { id: parsed.data },
+    const contact = await prisma.contact.findFirst({
+      where: { id: parsed.data, userId: user.id },
     })
 
     if (!contact) {
@@ -47,7 +57,9 @@ export async function getContactById(id: string): Promise<ActionResult<Awaited<R
 
 export async function getRecentContacts(count: number = 5): Promise<ActionResult<Awaited<ReturnType<typeof prisma.contact.findMany>>>> {
   try {
+    const user = await requireUser()
     const contacts = await prisma.contact.findMany({
+      where: { userId: user.id },
       orderBy: { dateAjout: "desc" },
       take: count,
     })
@@ -59,14 +71,15 @@ export async function getRecentContacts(count: number = 5): Promise<ActionResult
 
 export async function createContact(data: CreateContactInput): Promise<ActionResult<Awaited<ReturnType<typeof prisma.contact.create>>>> {
   try {
+    const user = await requireUser()
     const parsed = CreateContactSchema.safeParse(data)
     if (!parsed.success) {
       const firstError = parsed.error.issues[0]?.message ?? "Donnees invalides"
       return { success: false, error: firstError }
     }
 
-    const existing = await prisma.contact.findUnique({
-      where: { email: parsed.data.email },
+    const existing = await prisma.contact.findFirst({
+      where: { email: parsed.data.email, userId: user.id },
     })
     if (existing) {
       return { success: false, error: "Un contact avec cet email existe deja" }
@@ -80,17 +93,20 @@ export async function createContact(data: CreateContactInput): Promise<ActionRes
         telephone: parsed.data.telephone,
         entreprise: parsed.data.entreprise,
         statut: parsed.data.statut,
+        userId: user.id,
       },
     })
 
     return { success: true, data: contact }
   } catch (error) {
-    return { success: false, error: "Impossible de creer le contact" }
+    const message = error instanceof Error ? error.message : String(error)
+    return { success: false, error: `Impossible de creer le contact: ${message}` }
   }
 }
 
 export async function updateContact(id: string, data: UpdateContactInput): Promise<ActionResult<Awaited<ReturnType<typeof prisma.contact.update>>>> {
   try {
+    const user = await requireUser()
     const parsedId = ContactIdSchema.safeParse(id)
     if (!parsedId.success) {
       return { success: false, error: "ID invalide" }
@@ -102,16 +118,16 @@ export async function updateContact(id: string, data: UpdateContactInput): Promi
       return { success: false, error: firstError }
     }
 
-    const existing = await prisma.contact.findUnique({
-      where: { id: parsedId.data },
+    const existing = await prisma.contact.findFirst({
+      where: { id: parsedId.data, userId: user.id },
     })
     if (!existing) {
       return { success: false, error: "Contact introuvable" }
     }
 
     if (parsed.data.email && parsed.data.email !== existing.email) {
-      const emailTaken = await prisma.contact.findUnique({
-        where: { email: parsed.data.email },
+      const emailTaken = await prisma.contact.findFirst({
+        where: { email: parsed.data.email, userId: user.id },
       })
       if (emailTaken) {
         return { success: false, error: "Un contact avec cet email existe deja" }
@@ -131,13 +147,14 @@ export async function updateContact(id: string, data: UpdateContactInput): Promi
 
 export async function deleteContact(id: string): Promise<ActionResult<{ id: string }>> {
   try {
+    const user = await requireUser()
     const parsed = ContactIdSchema.safeParse(id)
     if (!parsed.success) {
       return { success: false, error: "ID invalide" }
     }
 
-    const existing = await prisma.contact.findUnique({
-      where: { id: parsed.data },
+    const existing = await prisma.contact.findFirst({
+      where: { id: parsed.data, userId: user.id },
     })
     if (!existing) {
       return { success: false, error: "Contact introuvable" }

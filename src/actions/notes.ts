@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
+import { getCurrentUser } from "@/lib/auth"
 import {
   CreateNoteSchema,
   NoteIdSchema,
@@ -11,8 +12,22 @@ type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string }
 
+async function requireUser() {
+  const user = await getCurrentUser()
+  if (!user) throw new Error("Non authentifie")
+  return user
+}
+
 export async function getNotesByContactId(contactId: string): Promise<ActionResult<Awaited<ReturnType<typeof prisma.note.findMany>>>> {
   try {
+    const user = await requireUser()
+    const contact = await prisma.contact.findFirst({
+      where: { id: contactId, userId: user.id },
+    })
+    if (!contact) {
+      return { success: false, error: "Contact introuvable" }
+    }
+
     const notes = await prisma.note.findMany({
       where: { contactId },
       orderBy: { date: "desc" },
@@ -25,14 +40,15 @@ export async function getNotesByContactId(contactId: string): Promise<ActionResu
 
 export async function createNote(data: CreateNoteInput): Promise<ActionResult<Awaited<ReturnType<typeof prisma.note.create>>>> {
   try {
+    const user = await requireUser()
     const parsed = CreateNoteSchema.safeParse(data)
     if (!parsed.success) {
       const firstError = parsed.error.issues[0]?.message ?? "Donnees invalides"
       return { success: false, error: firstError }
     }
 
-    const contact = await prisma.contact.findUnique({
-      where: { id: parsed.data.contactId },
+    const contact = await prisma.contact.findFirst({
+      where: { id: parsed.data.contactId, userId: user.id },
     })
     if (!contact) {
       return { success: false, error: "Contact introuvable" }
@@ -58,6 +74,7 @@ export async function createNote(data: CreateNoteInput): Promise<ActionResult<Aw
 
 export async function deleteNote(id: string): Promise<ActionResult<{ id: string }>> {
   try {
+    const user = await requireUser()
     const parsed = NoteIdSchema.safeParse(id)
     if (!parsed.success) {
       return { success: false, error: "ID invalide" }
@@ -65,8 +82,9 @@ export async function deleteNote(id: string): Promise<ActionResult<{ id: string 
 
     const existing = await prisma.note.findUnique({
       where: { id: parsed.data },
+      include: { contact: { select: { userId: true } } },
     })
-    if (!existing) {
+    if (!existing || existing.contact.userId !== user.id) {
       return { success: false, error: "Note introuvable" }
     }
 

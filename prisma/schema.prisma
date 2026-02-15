@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model User {
@@ -15,6 +15,7 @@ model User {
   nom       String
   createdAt DateTime  @default(now())
   sessions  Session[]
+  contacts  Contact[]
 }
 
 model Session {
@@ -30,17 +31,21 @@ model Session {
 }
 
 model Contact {
-  id             String @id @default(cuid())
+  id             String   @id @default(cuid())
   prenom         String
   nom            String
-  email          String @unique
-  telephone      String @default("")
-  entreprise     String @default("")
-  statut         String @default("prospect")
+  email          String
+  telephone      String   @default("")
+  entreprise     String   @default("")
+  statut         String   @default("prospect")
   dateAjout      DateTime @default(now())
   dernierContact DateTime @default(now())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   notes          Note[]
 
+  @@unique([email, userId])
+  @@index([userId])
   @@index([statut])
   @@index([dateAjout])
   @@index([dernierContact])
