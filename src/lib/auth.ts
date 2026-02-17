@@ -54,6 +54,7 @@ export async function getCurrentUser() {
     email: session.user.email,
     prenom: session.user.prenom,
     nom: session.user.nom,
+    subscriptionStatus: session.user.subscriptionStatus,
   }
 }
 

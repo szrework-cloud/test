@@ -8,14 +8,17 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  password  String
-  prenom    String
-  nom       String
-  createdAt DateTime  @default(now())
-  sessions  Session[]
-  contacts  Contact[]
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  password             String
+  prenom               String
+  nom                  String
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?
+  subscriptionStatus   String    @default("none")
+  createdAt            DateTime  @default(now())
+  sessions             Session[]
+  contacts             Contact[]
 }
 
 model Session {

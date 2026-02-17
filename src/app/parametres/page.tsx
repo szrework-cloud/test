@@ -1,4 +1,5 @@
 import AuthLayout from "@/components/AuthLayout"
+import SubscriptionSection from "@/components/SubscriptionSection"
 
 export default function ParametresPage() {
   return (
@@ -10,13 +11,8 @@ export default function ParametresPage() {
         </p>
       </div>
 
-      <div className="flex min-h-[calc(100vh-16rem)] items-center justify-center">
-        <div className="animate-in stagger-3 text-center">
-          <button className="group relative rounded-2xl bg-gradient-to-br from-red-600 to-red-500 px-8 py-4 font-display text-sm font-semibold text-white shadow-xl shadow-red-500/20 transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/30 hover:-translate-y-0.5">
-            <div className="absolute -inset-1 rounded-2xl bg-red-500/20 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100" />
-            <span className="relative">Bouton rouge</span>
-          </button>
-        </div>
+      <div className="animate-in stagger-2 max-w-lg">
+        <SubscriptionSection />
       </div>
     </AuthLayout>
   )
